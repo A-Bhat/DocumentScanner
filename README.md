@@ -35,4 +35,4 @@ Apply mean thresholding to obtain the final scanned document.
 <img src="SampleImages/ScannedImage.png" width="370" height ="500">
 
 **References:**
-Some of the techniques in the code were sourced from pyimagesearch.org
+Some of the techniques in the code were sourced from https://pyimagesearch.com
