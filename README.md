@@ -20,7 +20,7 @@ Below is a step-by-step demonstration of the function:
 
 4. **Document Contours:**
 
-<img src="SampleImages/DocumnetContours.png" width="370" height ="500">
+<img src="SampleImages/DocumentContours.png" width="370" height ="500">
 
 If the document contours are not accurate press `1` and select four vertices of the document in the pop-up image. Else press `2` to continue.
 
