@@ -30,4 +30,9 @@ If the document contours are not accurate press `1` and select four vertices of 
 
 6. **Thresholding:**
 
+Apply mean thresholding to obtain the final scanned document.
+
 <img src="SampleImages/ScannedImage.png" width="370" height ="500">
+
+**References:**
+Some of the techniques in the code were sourced from pyimagesearch.org
