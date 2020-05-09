@@ -1,0 +1,117 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri May  8 12:34:50 2020
+
+@author: abhishekbhat
+"""
+
+from pyimagesearch.transform import four_point_transform
+from skimage.filters import threshold_local
+import numpy as np
+import cv2
+import imutils
+
+def scanner(img): 
+    # Variable to store click event coordinated
+    coord = []
+    # Function to capture click events
+    def click_event(event, x, y, flags, param):
+        if event == cv2.EVENT_LBUTTONDOWN:
+            print(x,y)
+            coord.append([int(x),int(y)]) 
+            
+    # Load the image and store the aspect reatio
+    image = cv2.imread(img)
+    ratio = image.shape[0]/500
+    resized = imutils.resize(image, height = 500)
+    resized1 = resized.copy()
+    
+    # Convert to grayscale apply blurring
+    gray = cv2.cvtColor(resized,cv2.COLOR_BGR2GRAY)
+    blurred = cv2.medianBlur(gray,15)
+    edge = cv2.Canny(blurred, 50, 200,L2gradient = True)
+    cv2.imshow("Original Image", resized)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    cv2.waitKey(1)
+    cv2.imshow("Edge Image", edge)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    cv2.waitKey(1)
+    
+    # Find Contours and save the largest ones
+    cnts = cv2.findContours(edge.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+    cnts = imutils.grab_contours(cnts)
+    cnts = sorted(cnts, key = cv2.contourArea,reverse = True)[:5]
+    
+    for c in cnts:
+        peri = cv2.arcLength(c, True)
+        approx = cv2.approxPolyDP(c, 0.1*peri, True)
+        
+        if len(approx)==4:
+            screenCnt = approx
+            break
+    try:
+        # Draw contours on the image
+        cv2.drawContours(resized, [screenCnt], -1, (0, 255, 0), 2)
+        cv2.imshow("Outline", resized)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+        cv2.waitKey(1)
+        
+        # User input for manual cropping
+        inpt = input("Press 1 to crop manually or press 2 to continue:")
+        if inpt == str(1):
+            cv2.imshow('Please select the 4 vertices of the document',resized1) 
+            cv2.setMouseCallback('Please select the 4 vertices of the document', click_event)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+            cv2.waitKey(1)
+            z1 = sorted(coord,key = lambda x: x[0])[:2]
+            z2 = sorted(coord,key = lambda x: x[0])[2:]
+            z1_sorted = sorted(z1,key = lambda x: x[1])
+            z2_sorted = sorted(z2,key = lambda x: x[1], reverse = True)
+            z1 = z1_sorted[0]
+            z2 = z2_sorted[0]
+            screenCnt = np.append(z1_sorted,z2_sorted, axis = 0)
+            
+    except:
+        # 
+        print("Document boundaries could not be found. Please select the vertices of the document")
+        cv2.imshow('Please select the 4 vertices of the document',resized1) 
+        cv2.setMouseCallback('Please select the 4 vertices of the document', click_event)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+        cv2.waitKey(1)
+        z1 = sorted(coord,key = lambda x: x[0])[:2]
+        z2 = sorted(coord,key = lambda x: x[0])[2:]
+        z1_sorted = sorted(z1,key = lambda x: x[1])
+        z2_sorted = sorted(z2,key = lambda x: x[1], reverse = True)
+        z1 = z1_sorted[0]
+        z2 = z2_sorted[0]
+        screenCnt = np.append(z1_sorted,z2_sorted, axis = 0)
+        
+    # Applying four-point-transform
+    warped = four_point_transform(image, screenCnt.reshape(4, 2) * ratio)
+        
+    # convert the warped image to grayscale, then threshold it
+    # to give it that 'black and white' paper effect
+    warped = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
+    cv2.imshow("FourPointTransform", imutils.resize(warped, height = 650))
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    cv2.waitKey(1)
+    
+    T = threshold_local(warped, 15, offset = 10, method = "mean")
+    warped = (warped > T).astype("uint8") * 255
+    
+    # show the original and scanned images
+    cv2.imshow("Original", imutils.resize(image, height = 650))
+    cv2.imshow("Scanned", imutils.resize(warped, height = 650))
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    cv2.waitKey(1)
+    
+    # Store the scanned image
+    cv2.imwrite("scanned.jpg", warped)
